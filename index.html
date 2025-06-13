@@ -284,40 +284,57 @@
             return messageContent;
         }
 
-        function formatAIResponse(response) {
+       function formatAIResponse(response) {
+            if (!response || response['Trait 1'] === undefined || response['Trait 2'] === undefined) {
+                return `<div class="trait-result"><span class="trait-label">Maaf:</span> Kami tidak bisa mengenali karakteristik dari input tersebut. Silakan coba lagi dengan deskripsi yang lebih jelas.</div>`;
+            }
+        
             let formattedText = '';
+        
             if (response['Trait 1']) {
-                formattedText += `<div class="trait-result"><span class="trait-label">Trait 1:</span> ${response['Temperament  1']}</div>`;
+                formattedText += `<div class="trait-result"><span class="trait-label">Temperament 1:</span> ${response['Trait 1']}</div>`;
             }
+        
             if (response['Trait 2']) {
-                formattedText += `<div class="trait-result"><span class="trait-label">Trait 2:</span> ${response['Temperament  2']}</div>`;
+                formattedText += `<div class="trait-result"><span class="trait-label">Temperament 2:</span> ${response['Trait 2']}</div>`;
             }
+        
             if (response['Strategy']) {
-                formattedText += `<div class="trait-result"><span class="trait-label">Strategy:</span> ${response['Strategy']}</div>`;
+                formattedText += `<div class="trait-result"><span class="trait-label">Strategi Penjualan:</span> ${response['Strategy']}</div>`;
             }
-            return formattedText || JSON.stringify(response, null, 2);
+        
+            return formattedText;
         }
 
-        async function sendMessage() {
+
+       async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message || isLoading) return;
-
+        
+            // Validasi jumlah kata minimal 5
+            const wordCount = message.split(/\s+/).length;
+            if (wordCount < 5) {
+                addMessage('Maaf, mohon tuliskan deskripsi yang lebih lengkap (minimal 5 kata).', false);
+                return;
+            }
+        
+            // Tambahkan pesan pengguna ke UI
             addMessage(message, true);
             messageInput.value = '';
             messageInput.style.height = 'auto';
-
+        
             const loadingContent = addMessage('', false, true);
             isLoading = true;
             sendButton.disabled = true;
-
+        
             try {
                 const client = await Client.connect("UNMAN88/SALES_AI");
                 const result = await client.predict("/predict", [message]);
-
+        
                 loadingContent.parentElement.remove();
                 const aiContent = addMessage('', false);
                 aiContent.innerHTML = formatAIResponse(result.data[0]);
-
+        
             } catch (error) {
                 loadingContent.parentElement.remove();
                 addMessage(`Maaf, terjadi kesalahan: ${error.message}`, false);
@@ -327,6 +344,7 @@
                 messageInput.focus();
             }
         }
+
 
         window.addEventListener('load', () => {
             const welcomeMessage = chatContainer.querySelector('.welcome-message');
